@@ -55,14 +55,26 @@ public class TaskController {
   }
 
   @PutMapping("/{taskId}")
-  public TaskModel update(@RequestBody TaskModel taskModel, HttpServletRequest request,
+  public ResponseEntity update(@RequestBody TaskModel taskModel, HttpServletRequest request,
       @PathVariable UUID taskId) {
       
     var existingTask = this.taskRepository.findById(taskId).orElse(null);
+
+    if(existingTask == null) {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body("Tarefa não encontrada");
+    }
+
+    var userId = request.getAttribute("idUser");
+    if (!existingTask.getIdUser().equals(userId)) {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body("Não é possível alterar uma tarefa de outro usuário");
+    }
+
     Utils.copyNonNullProperties(taskModel, existingTask);
 
     var updatedTask = this.taskRepository.save(existingTask);
-    return updatedTask;
+    return ResponseEntity.ok().body(updatedTask);
 
   }
 
